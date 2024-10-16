@@ -66,7 +66,7 @@
       vars:
         ucarp_interface: "{{ ansible_default_ipv4.interface }}"
         lan_ip: "{{ ansible_default_ipv4.address }}"
-        virtual_ip: "{{ k3s_ha_virtual_ip | split('/')[0] }}"
+        virtual_ip: "{{ k3s_ha_virtual_ip | split('/') | first }}"
         vnet_id: "{{ k3s_ha_vnet_id }}"
       ansible.builtin.template:
         src: ucarp/ucarp-ip-up.j2
