@@ -1,0 +1,19 @@
+- name: Restart K3s agents
+  hosts: nodes
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Restart k3s-agent service
+      ansible.builtin.service:
+        name: k3s-agent
+        state: restarted
+
+- name: Restart K3s master
+  hosts: master
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Restart k3s service
+      ansible.builtin.service:
+        name: k3s
+        state: restarted

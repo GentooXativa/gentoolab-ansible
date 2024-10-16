@@ -1,0 +1,17 @@
+- name: Uninstall K3s agents
+  hosts: nodes
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Uninstall K3s
+      ansible.builtin.command: /usr/local/bin/k3s-agent-uninstall.sh
+      ignore_errors: true
+
+- name: Uninstall K3s in Master node
+  hosts: master
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Uninstall K3s
+      ansible.builtin.command: /usr/local/bin/k3s-uninstall.sh
+      ignore_errors: true

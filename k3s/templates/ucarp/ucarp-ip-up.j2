@@ -1,0 +1,11 @@
+#! /bin/sh
+
+ucarp \
+    --interface={{ucarp_interface}} \
+    --srcip={{lan_ip}} \
+    --vhid={{vnet_id}} \
+    --addr={{virtual_ip}} \
+    --passfile=/etc/ucarp/password  \
+    --upscript=/etc/ucarp/virtual-ip-up.sh \
+    --downscript=/etc/ucarp/vip-down.sh \
+    -P -z -n -B &> /var/log/ucarp.log

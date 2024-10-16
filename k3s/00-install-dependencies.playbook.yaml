@@ -1,0 +1,112 @@
+- name: Install dependencies
+  hosts: master
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install open-iscsi
+      ansible.builtin.package:
+        name: open-iscsi
+        state: present
+      when: ansible_os_family != "Gentoo"
+
+    - name: Install age encryption suite
+      ansible.builtin.package:
+        name: age
+        state: present
+      when: ansible_os_family != "Gentoo"
+
+    - name: Install ucarp
+      ansible.builtin.package:
+        name: ucarp
+        state: present
+      when: ansible_os_family != "Gentoo"
+
+    - name: Restart open-iscsi
+      ansible.builtin.service:
+        name: iscsid
+        state: restarted
+
+- name: Ensure that all hosts have the correct ucarp configuration
+  hosts: master
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Load encrypted ucarp password from local file using a shell script
+      ansible.builtin.shell:
+        cmd: "age -d -i {{ ansible_ssh_private_key_file }} {{ playbook_dir }}/secrets/ucarp.password.enc"
+      register: ucarp_password
+      delegate_to: 127.0.0.1
+      become: false
+
+    - name: Ensure that /etc/ucarp exists
+      ansible.builtin.file:
+        name: /etc/ucarp
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Store password into /etc/ucarp/password
+      ansible.builtin.copy:
+        content: "{{ ucarp_password.stdout }}"
+        dest: /etc/ucarp/password
+        owner: root
+        group: root
+        mode: '0600'
+    
+    - name: Generate ucarp systemd Unit file
+      ansible.builtin.template:
+        src: templates/ucarp/ucarp.service.j2
+        dest: /etc/systemd/system/ucarp.service
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Generate ucarp IP up script
+      vars:
+        ucarp_interface: "{{ ansible_default_ipv4.interface }}"
+        lan_ip: "{{ ansible_default_ipv4.address }}"
+        virtual_ip: "{{ k3s_ha_virtual_ip | split('/')[0] }}"
+        vnet_id: "{{ k3s_ha_vnet_id }}"
+      ansible.builtin.template:
+        src: ucarp/ucarp-ip-up.j2
+        dest: /usr/sbin/ucarp-ip-up
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Generate Virtual IP up script
+      vars:
+        ucarp_interface: "{{ ansible_default_ipv4.interface }}"
+        virtual_ip: "{{ k3s_ha_virtual_ip }}"
+      ansible.builtin.template:
+        src: ucarp/virtual-ip-up.sh.j2
+        dest: /etc/ucarp/virtual-ip-up.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Generate Virtual IP down script
+      vars:
+        ucarp_interface: "{{ ansible_default_ipv4.interface }}"
+        virtual_ip: "{{ k3s_ha_virtual_ip }}"
+      ansible.builtin.template:
+        src: ucarp/virtual-ip-down.sh.j2
+        dest: /etc/ucarp/virtual-ip-down.sh
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Generate ucarp IP restart script
+      ansible.builtin.template:
+        src: templates/ucarp/ucarp-ip-restart.j2
+        dest: /usr/sbin/ucarp-ip-restart
+        owner: root
+        group: root
+        mode: '0755'
+
+    - name: Ensure that ucarp is enabled
+      ansible.builtin.systemd:
+        name: ucarp
+        enabled: yes
+        state: started

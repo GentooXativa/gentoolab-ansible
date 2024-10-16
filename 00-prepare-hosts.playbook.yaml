@@ -1,0 +1,125 @@
+- name: Ensure that hostname match inventory
+  hosts: all
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Set hostname if needed
+      ansible.builtin.hostname:
+        name: "{{ inventory_hostname }}"
+      register: hostname_changed
+      changed_when: hostname_changed.changed
+      notify:
+        - Reboot host
+  handlers:
+    - name: Reboot host
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+        msg: "Reboot initiated by Ansible for hostname change"
+
+- name: Gather facts
+  hosts: all
+  become: true
+  gather_facts: true
+
+- name: Ensure that all hosts are in the correct timezone
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Set timezone
+      community.general.timezone:
+        name: Europe/Madrid
+
+- name: Ensure that all hosts have the correct locale
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Set locale
+      community.general.locale_gen:
+        name: es_ES.UTF-8
+        state: present
+
+- name: Ensure that all hosts have ssh password authentication disabled and root login disabled
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Disable ssh password authentication
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+        state: present
+
+    - name: Disable ssh root login with password
+      ansible.builtin.lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin prohibit-password'
+        state: present
+
+- name: Ensure that all hosts have the correct ntp configuration
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install ntp
+      ansible.builtin.package:
+        name: ntp
+        state: present
+      when: ansible_os_family != "Gentoo"
+
+    - name: Prepare gentoo USE flags
+      ansible.builtin.lineinfile:
+        dest: /etc/portage/package.use/ntp
+        line: 'net-dns/avahi mdnsresponder-compat'
+        create: yes
+        state: present
+      when: ansible_os_family == "Gentoo"
+
+    - name: Install ntp
+      community.general.portage:
+        name: ntp
+        deep: true
+        state: present
+      when: ansible_os_family == "Gentoo"
+
+    - name: Restart ntp
+      ansible.builtin.service:
+        name: ntpd
+        state: restarted
+
+- name: Ensure that all hosts have the correct NFS configuration
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install nfs-utils
+      ansible.builtin.package:
+        name: nfs-utils
+        state: present
+
+    - name: Ensure that /homelab exists
+      ansible.builtin.file:
+        path: /homelab
+        state: directory
+        mode: '0755'
+
+    - name: Ensure that /homelab is mounted
+      ansible.posix.mount:
+        path: /homelab
+        src: storage.lab:/homelab
+        fstype: nfs4
+        opts: _netdev,rw,rsize=1048576,wsize=1048576,vers=4.2
+        state: mounted
+
+- name: Restart all hosts to ensure compliance
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Restart host
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+        msg: "Reboot initiated by Ansible for security compliance changes"

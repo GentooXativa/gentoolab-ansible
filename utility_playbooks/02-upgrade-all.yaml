@@ -1,0 +1,22 @@
+- name: Upgrade all
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Upgrade apt packages (Debian)
+      ansible.builtin.apt:
+        upgrade: true
+        update_cache: true
+      when: ansible_os_family == "Debian"
+    - name: Upgrade packages (Archlinux)
+      ansible.builtin.pacman:
+        upgrade: true
+        update_cache: true
+        force: true
+      when: ansible_facts["distribution"] == "Archlinux"
+    - name: Upgrade packages (Gentoo)
+      community.general.portage:
+        name: "@world"
+        state: latest
+        deep: true
+      when: ansible_os_family == "Gentoo"

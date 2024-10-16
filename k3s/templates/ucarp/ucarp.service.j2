@@ -1,0 +1,16 @@
+[Unit]
+Description=UCarp Virtual IP
+After=systemd-networkd-wait-online.service
+Wants=systemd-networkd-wait-online.service
+
+[Service]
+ExecStartPre=/bin/sh -c 'until ping -c1 1.1.1.1; do sleep 1; done;'
+ExecStart=/usr/sbin/ucarp-ip-up
+ExecReload=/usr/sbin/ucarp-ip-restart
+Type=forking
+Restart=always
+KillMode=control-group
+
+[Install]
+WantedBy=default.target
+RequiredBy=multi-user.target
