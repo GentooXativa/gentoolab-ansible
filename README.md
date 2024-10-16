@@ -29,7 +29,7 @@ ansible-playbook -b -i ./your-local.inventory k3s/00-install-dependencies.playbo
 This one-liner will help you to generate a random password and encrypt it using age:
 
 ```bash
-pwgen 50 1 > temp-password && age -R ~/.ssh/id_rsa.pub temp-password > ucarp.password.enc && rm temp-password
+pwgen 16 1 > temp-password && age -R ~/.ssh/id_rsa.pub temp-password > ucarp.password.enc && rm temp-password
 ```
 
-This will generate a 50 characters long password, encrypt it using your public key and save it to `ucarp.password.enc` file. You can then use this file in your playbooks.
+This will generate a 16 characters long password, encrypt it using your public key and save it to `ucarp.password.enc` file. You can then use this file in your playbooks.
