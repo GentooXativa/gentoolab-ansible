@@ -32,9 +32,10 @@
   gather_facts: true
   tasks:
     - name: Load encrypted ucarp password from local file using a shell script
-      ansible.builtin.shell:
+      ansible.builtin.command:
         cmd: "age -d -i {{ ansible_ssh_private_key_file }} {{ playbook_dir }}/secrets/ucarp.password.enc"
       register: ucarp_password
+      changed_when: ucarp_password.stdout != ""
       delegate_to: 127.0.0.1
       become: false
 
@@ -53,7 +54,7 @@
         owner: root
         group: root
         mode: '0600'
-    
+
     - name: Generate ucarp systemd Unit file
       ansible.builtin.template:
         src: templates/ucarp/ucarp.service.j2
@@ -108,5 +109,5 @@
     - name: Ensure that ucarp is enabled
       ansible.builtin.systemd:
         name: ucarp
-        enabled: yes
+        enabled: true
         state: started
