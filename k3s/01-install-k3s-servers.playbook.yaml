@@ -1,0 +1,85 @@
+- name: Install K3S on master nodes
+  hosts: master
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Ensure that k3s configuration directory exists
+      ansible.builtin.file:
+        name: /etc/rancher/k3s
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Generate configuration file
+      # vars:
+      #   datastore_endpoint: ""
+      ansible.builtin.template:
+        src: k3s/config.yaml.j2
+        dest: /etc/rancher/k3s/config.yaml
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Ensure that ucarp is only enabled on the first master node
+      ansible.builtin.systemd:
+        name: ucarp
+        enabled: false
+        state: stopped
+      when: inventory_hostname != groups['master'][0]
+
+    - name: Reboot disabled ucarp nodes
+      ansible.builtin.reboot:
+        test_command: uptime
+      when: inventory_hostname != groups['master'][0]
+
+    - name: Download K3s intaller
+      ansible.builtin.get_url:
+        url: "https://get.k3s.io"
+        dest: /tmp/install-k3s.sh
+        mode: '0755'
+
+    - name: Check if K3S is already installed
+      ansible.builtin.command: k3s --version
+      register: k3s_version
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Install K3S only at first master node
+      ansible.builtin.command: |
+        /tmp/install-k3s.sh server --cluster-init
+      register: k3s_install
+      changed_when: k3s_install.rc == 0
+      when: inventory_hostname == groups['master'][0] and k3s_version.rc != 0
+
+    - name: Retrieve token file from first master node
+      ansible.builtin.fetch:
+        src: /var/lib/rancher/k3s/server/token
+        dest: /tmp/k3s_token
+      when: inventory_hostname == groups['master'][0]
+
+    - name: Read token file
+      ansible.builtin.set_fact:
+        k3s_token: "{{ lookup('file', '/tmp/k3s_token/meesek100/var/lib/rancher/k3s/server/token') }}"
+
+    - name: Install K3S on remaining master nodes
+      ansible.builtin.command: |
+        /tmp/install-k3s.sh server --server "https://{{ k3s.master_ip | split('/') | first }}:6443" --token "{{ k3s_token }}"
+      register: k3s_install
+      changed_when: k3s_install.rc == 0
+      when: inventory_hostname != groups['master'][0]
+
+    - name: Restart K3s master
+      ansible.builtin.service:
+        name: k3s
+        state: restarted
+      when: inventory_hostname != groups['master'][0]
+
+    - name: Re-enable ucarp
+      ansible.builtin.systemd:
+        name: ucarp
+        enabled: true
+        state: started
+      when: inventory_hostname != groups['master'][0]

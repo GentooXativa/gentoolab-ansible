@@ -1,5 +1,19 @@
 ansible_user: jvginer
 ansible_ssh_private_key_file: ~/.ssh/id_rsa
 
-k3s_ha_virtual_ip: 10.50.0.0/16
-k3s_ha_vnet_id: 42
+k3s:
+  master_ip: "10.50.0.0/16"
+  network:
+    cluster_cidr: 172.1.0.0/16
+    service_cidr: 172.96.0.0/12
+    # flannel_iface: "wg0"
+    dns: k3s-cluster.lab
+    extra_tls_san:
+      - "test-cluster.lab"
+  ha:
+    enabled: true
+    dns: k3s-ha-cluster.lab
+    virtual_ip: "10.50.0.0/16"
+    vnet_id: 42
+    extra_tls_san:
+      - "test-cluster.lab"

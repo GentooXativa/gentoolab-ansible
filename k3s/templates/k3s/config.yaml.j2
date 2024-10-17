@@ -1,0 +1,37 @@
+write-kubeconfig-mode: "0644"
+disable: "traefik"
+
+{% if k3s.network.flannel_iface is defined %}
+flannel-iface: {{ k3s.network.flannel_iface }}
+{% endif %}
+
+tls-san:
+{% if k3s.ha.enabled %}
+    - {{ k3s.ha.dns }}
+    - {{ k3s.ha.virtual_ip | split('/') | first }}
+{% if k3s.ha.extra_tls_san is defined %}
+{% for san in k3s.ha.extra_tls_san %}
+    - {{ san }}
+{% endfor %}
+{% endif %}
+{% else %}
+    - {{ k3s.network.dns }}
+    - {{ k3s.master_ip | split('/') | first }}
+{% if k3s.network.extra_tls_san is defined %}
+{% for san in k3s.network.extra_tls_san %}
+    - {{ san }}
+{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if k3s.ha.enabled and datastore_endpoint is defined %}
+datastore-endpoint: "{{ datastore_endpoint }}"
+{% endif %}
+
+{% if k3s.network.cluster_cidr is defined %}
+cluster-cidr: {{ k3s.network.cluster_cidr }}
+{% endif %}
+
+{% if k3s.network.service_cidr is defined %}
+service-cidr: {{ k3s.network.service_cidr }}
+{% endif %}
