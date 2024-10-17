@@ -49,7 +49,7 @@
 
     - name: Install K3S only at first master node
       ansible.builtin.command: |
-        /tmp/install-k3s.sh server --cluster-init
+        /tmp/install-k3s.sh server --cluster-init --secrets-encryption
       register: k3s_install
       changed_when: k3s_install.rc == 0
       when: inventory_hostname == groups['master'][0] and k3s_version.rc != 0
@@ -66,7 +66,7 @@
 
     - name: Install K3S on remaining master nodes
       ansible.builtin.command: |
-        /tmp/install-k3s.sh server --server "https://{{ k3s.master_ip | split('/') | first }}:6443" --token "{{ k3s_token }}"
+        /tmp/install-k3s.sh server --server "https://{{ k3s.master_ip | split('/') | first }}:6443" --token "{{ k3s_token }}" --secrets-encryption
       register: k3s_install
       changed_when: k3s_install.rc == 0
       when: inventory_hostname != groups['master'][0]
