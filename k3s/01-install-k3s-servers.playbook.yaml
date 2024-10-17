@@ -26,12 +26,12 @@
         name: ucarp
         enabled: false
         state: stopped
-      when: inventory_hostname != groups['master'][0]
+      when: inventory_hostname != groups['master'][0] and k3s.ha.enabled
 
     - name: Reboot disabled ucarp nodes
       ansible.builtin.reboot:
         test_command: uptime
-      when: inventory_hostname != groups['master'][0]
+      when: inventory_hostname != groups['master'][0] and k3s.ha.enabled
 
     - name: Download K3s intaller
       ansible.builtin.get_url:
@@ -82,4 +82,4 @@
         name: ucarp
         enabled: true
         state: started
-      when: inventory_hostname != groups['master'][0]
+      when: inventory_hostname != groups['master'][0] and k3s.ha.enabled
