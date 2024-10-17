@@ -1,5 +1,6 @@
 write-kubeconfig-mode: "0644"
 disable: "traefik"
+secrets-encryption: true
 
 {% if k3s.network.flannel_iface is defined %}
 flannel-iface: {{ k3s.network.flannel_iface }}
