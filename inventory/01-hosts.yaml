@@ -1,0 +1,30 @@
+k3s:
+  children:
+    master:
+      hosts:
+        meesek100:
+          ansible_host: meesek-100.lab
+          vars:
+            vpn_ip: 192.168.250.0
+        meesek101:
+          ansible_host: meesek-101.lab
+          vars:
+            vpn_ip: 192.168.250.1
+        meesek102:
+          ansible_host: meesek-102.lab
+          vars:
+            vpn_ip: 192.168.250.2
+
+    nodes:
+      hosts:
+        meesek000:
+          ansible_host: meesek-000.lab
+          vars:
+            vpn_ip: 192.168.250.10
+
+    external:
+      hosts:
+        c137:
+          ansible_host: c137.gentooxativa.lab
+          vars:
+            vpn_ip: 192.168.250.254

@@ -1,0 +1,5 @@
+ansible_user: jvginer
+ansible_ssh_private_key_file: ~/.ssh/id_rsa
+
+k3s_ha_virtual_ip: 10.50.0.0/16
+k3s_ha_vnet_id: 42
