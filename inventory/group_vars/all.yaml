@@ -49,3 +49,51 @@ k3s:
       annotations:
         "kubernetes.io/description": "Namespace for ArgoCD"
         "gentoolab.io/created-by": "ansible"      
+  secrets:
+    - name: grafana-credentials
+      namespace: monitoring
+      data:
+        - name: admin-user
+          value: admin
+        - name: password
+          generate: true
+          length: 16
+        - name: "ldap-toml"
+          generate: true
+    
+    - name: postgres-credentials
+      namespace: shared
+      data:
+        - name: password
+          generate: true
+          length: 24
+        - name: postgres-password
+          generate: true
+          length: 24
+        - name: replication-password
+          generate: true
+          length: 24
+
+    - name: mongodb-credentials
+      namespace: shared
+      data:
+        - name: mongodb-replica-set-key
+          generate: true
+          length: 24
+        - name: mongodb-root-password
+          generate: true
+          length: 24
+    
+    - name: argocd-credentials
+      namespace: argocd
+      data:
+        - name: initial-admin-password
+          generate: true
+          length: 24
+
+    - name: redis-credentials
+      namespace: shared
+      data:
+        - name: redis-default-password
+          generate: true
+          length: 24
