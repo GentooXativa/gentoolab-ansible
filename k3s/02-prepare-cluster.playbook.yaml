@@ -56,3 +56,22 @@
             labels: "{{ item.labels | default({}) }}"
             annotations: "{{ item.annotations | default({'gentoolab.io/created-by': 'ansible'}) }}"
         state: present
+
+    - name: Generate random passwors template
+      ansible.builtin.template:
+        src: k3s/initial-secrets.yaml.j2
+        dest: /tmp/initial-secrets.yaml
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Apply initial secrets
+      ansible.builtin.command: kubectl apply -f /tmp/initial-secrets.yaml
+      register: initial_secrets
+      changed_when: initial_secrets.rc == 0
+
+    - name: Cleanup initial secrets
+      ansible.builtin.file:
+        path: /tmp/initial-secrets.yaml
+        state: absent
+      when: initial_secrets.rc == 0
