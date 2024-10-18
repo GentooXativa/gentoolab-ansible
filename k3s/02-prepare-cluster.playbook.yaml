@@ -4,17 +4,19 @@
   gather_facts: true
 
   tasks:
-    # - name: Ensure that python kubernetes package is installed
-    #   ansible.builtin.package:
-    #     name: "{% if ansible_os_family == 'Archlinux' %} 'python-kubernetes' {% else %} 'python3-kubernetes' {% endif %}"
-    #     state: present
-
     - name: Ensure that python kubernetes package is installed (Archlinux)
       community.general.pacman:
         name: python-kubernetes
         state: present
         update_cache: true
       when: ansible_os_family == 'Archlinux'
+
+    - name: Ensure that python kubernetes package is installed (Debian)
+      ansible.builtin.apt:
+        name: python3-kubernetes
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'Debian'
 
     - name: Check connection to the kubernetes cluster
       ansible.builtin.wait_for:
