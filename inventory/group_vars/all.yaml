@@ -18,3 +18,34 @@ k3s:
     vnet_id: 42
     extra_tls_san:
       - "test-cluster.lab"
+  namespaces:
+    - name: addons
+      labels:
+        target: addons
+      annotations:
+        "kubernetes.io/description": "Namespace for addons"
+        "gentoolab.io/created-by": "ansible"
+    - name: monitoring
+      labels:
+        target: monitoring
+      annotations:
+        "kubernetes.io/description": "Namespace for monitoring services"
+        "gentoolab.io/created-by": "ansible"
+    - name: shared
+      labels:
+        target: shared
+      annotations:
+        "kubernetes.io/description": "Shared namespace for databases and other services"
+        "gentoolab.io/created-by": "ansible"
+    - name: gentoolab
+      labels:
+        target: experiments
+      annotations:
+        "kubernetes.io/description": "Namespace for GentooLab experiments"
+        "gentoolab.io/created-by": "ansible"
+    - name: argocd
+      labels:
+        target: argocd
+      annotations:
+        "kubernetes.io/description": "Namespace for ArgoCD"
+        "gentoolab.io/created-by": "ansible"      

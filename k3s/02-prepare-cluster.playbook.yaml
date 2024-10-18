@@ -1,0 +1,56 @@
+- name: Prepare basic cluster setup
+  hosts: master[0]
+  become: true
+  gather_facts: true
+
+  tasks:
+    # - name: Ensure that python kubernetes package is installed
+    #   ansible.builtin.package:
+    #     name: "{% if ansible_os_family == 'Archlinux' %} 'python-kubernetes' {% else %} 'python3-kubernetes' {% endif %}"
+    #     state: present
+
+    - name: Ensure that python kubernetes package is installed (Archlinux)
+      community.general.pacman:
+        name: python-kubernetes
+        state: present
+        update_cache: true
+      when: ansible_os_family == 'Archlinux'
+
+    - name: Check connection to the kubernetes cluster
+      ansible.builtin.wait_for:
+        host: "{{ k3s.master_ip | split('/') | first }}"
+        port: 6443
+        delay: 5
+        timeout: 300
+        state: started
+
+    - name: Check if kubectl is installed
+      ansible.builtin.command: kubectl version --client
+      register: kubectl_version
+      changed_when: false
+      failed_when: false
+      ignore_errors: true
+
+    - name: Copy k3s configuration file to the first master node
+      ansible.builtin.copy:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: /root/.kube/config
+        owner: root
+        group: root
+        mode: '0600'
+        remote_src: true
+      when: kubectl_version.rc == 0
+
+    - name: Create a k8s namespaces
+      loop: "{{ k3s.namespaces }}"
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ item.name }}"
+            labels: "{{ item.labels | default({}) }}"
+            annotations: "{{ item.annotations | default({'gentoolab.io/created-by': 'ansible'}) }}"
+        state: present
